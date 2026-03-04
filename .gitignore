@@ -6,3 +6,15 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+
+# MCP server
+mcp/node_modules/
+mcp/dist/
+
+# Environment
+.env
+.env.local
+
+# Release artifacts (use GitHub Releases instead)
+release/*.zip
+release/*.sha256

@@ -1,28 +1,6 @@
 import SwiftUI
 
-// MARK: - Module 2: Install Wizard (placeholder)
-
-struct InstallWizardView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "arrow.down.circle")
-                .font(.system(size: 60))
-                .foregroundStyle(.blue)
-            Text("Install OpenClaw")
-                .font(.title.bold())
-            Text("One-click installation with progress tracking")
-                .foregroundStyle(.secondary)
-            Button("Install OpenClaw") {}
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(true)
-            Text("Coming soon — Module 2")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(40)
-    }
-}
+// Note: InstallWizardView is now in Views/InstallWizardView.swift
 
 // MARK: - Module 4: Health Monitor (placeholder)
 

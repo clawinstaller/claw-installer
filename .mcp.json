@@ -7,6 +7,10 @@
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
         "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
       }
+    },
+    "gh-issues": {
+      "command": "node",
+      "args": ["/Users/smartchoice/Projects/claw-installer/mcp/dist/index.js"]
     }
   }
 }

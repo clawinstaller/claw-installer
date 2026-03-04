@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+      
+      - name: Build Release
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          swift build -c release
+          
+          # Create app bundle
+          mkdir -p ClawInstaller.app/Contents/MacOS
+          mkdir -p ClawInstaller.app/Contents/Resources
+          cp .build/release/ClawInstaller ClawInstaller.app/Contents/MacOS/
+          
+          cat > ClawInstaller.app/Contents/Info.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>ClawInstaller</string>
+              <key>CFBundleIdentifier</key>
+              <string>ai.openclaw.installer</string>
+              <key>CFBundleName</key>
+              <string>ClawInstaller</string>
+              <key>CFBundleShortVersionString</key>
+              <string>$VERSION</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>14.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+          </dict>
+          </plist>
+          PLIST
+          
+          echo -n "APPL????" > ClawInstaller.app/Contents/PkgInfo
+      
+      - name: Create ZIP
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          zip -r ClawInstaller-$VERSION-macos.zip ClawInstaller.app
+          shasum -a 256 ClawInstaller-$VERSION-macos.zip > ClawInstaller-$VERSION-macos.zip.sha256
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ClawInstaller-*-macos.zip
+            ClawInstaller-*-macos.zip.sha256
+          body_path: release/RELEASE_NOTES.md
+          draft: true
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
