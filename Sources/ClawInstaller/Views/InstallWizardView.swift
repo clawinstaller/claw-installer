@@ -713,6 +713,21 @@ struct InstallWizardView: View {
                 }
 
                 Button {
+                    // Auto-populate AI question with error context
+                    let errorMsg = installer.errorMessage ?? "未知錯誤"
+                    let logTail = installer.terminalLines.suffix(20).joined(separator: "\n")
+                    let pm = installer.selectedPackageManager ?? "unknown"
+                    appState.pendingAIQuestion = """
+                    安裝 OpenClaw 時遇到錯誤，請幫我解決。
+
+                    錯誤訊息：\(errorMsg)
+                    套件管理器：\(pm)
+
+                    安裝 Log（最後 20 行）：
+                    ```
+                    \(logTail)
+                    ```
+                    """
                     appState.currentStep = .support
                 } label: {
                     Label("問 AI 助手", systemImage: "questionmark.bubble")

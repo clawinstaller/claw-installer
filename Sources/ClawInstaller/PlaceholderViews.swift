@@ -120,6 +120,17 @@ struct AISupportView: View {
             }
             .padding()
         }
+        .onAppear {
+            if let pending = appState.pendingAIQuestion {
+                appState.pendingAIQuestion = nil
+                userMessage = pending
+                // Auto-send after a brief delay so UI renders first
+                Task {
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    await MainActor.run { sendMessage() }
+                }
+            }
+        }
     }
 
     private func sendMessage() {

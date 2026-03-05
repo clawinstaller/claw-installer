@@ -27,6 +27,9 @@ final class AppState: ObservableObject {
     // Preflight results
     @Published var preflightChecker = PreflightChecker()
 
+    // AI Support — auto-send context when navigating from error pages
+    @Published var pendingAIQuestion: String?
+
     // Telemetry opt-out
     @AppStorage("telemetryEnabled") var telemetryEnabled: Bool = true
 
