@@ -14,16 +14,6 @@ struct VerifyCodeView: View {
     @State private var resendCountdown = 60
     @State private var resendTimer: Timer?
 
-    private var maskedEmail: String {
-        guard let atIndex = email.firstIndex(of: "@") else { return email }
-        let prefix = String(email[email.startIndex..<atIndex])
-        let domain = String(email[atIndex...])
-        if prefix.count <= 3 {
-            return prefix + "..." + domain
-        }
-        return String(prefix.prefix(3)) + "..." + domain
-    }
-
     private var fullCode: String {
         digits.joined()
     }
@@ -46,7 +36,9 @@ struct VerifyCodeView: View {
 
             // Subtitle
             VStack(spacing: 4) {
-                Text("我們已將 6 位數驗證碼寄至 \(maskedEmail)")
+                Text("我們已將 6 位數驗證碼寄至")
+                Text(email)
+                    .fontWeight(.medium)
                 Text("請檢查收件匣及垃圾郵件匣。")
             }
             .font(.subheadline)
