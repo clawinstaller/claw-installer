@@ -60,7 +60,7 @@ struct InstallWizardView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Install OpenClaw")
+                Text("安裝 OpenClaw")
                     .font(.title2.bold())
                 
                 Text(headerSubtitle)
@@ -108,15 +108,15 @@ struct InstallWizardView: View {
     private var headerSubtitle: String {
         switch installer.state {
         case .ready:
-            return "Ready to install OpenClaw CLI"
+            return "準備安裝 OpenClaw CLI"
         case .checking:
-            return "Checking system requirements..."
+            return "正在檢查系統需求..."
         case .installing:
             return installer.currentStage.description
         case .success:
-            return "Installation completed successfully"
+            return "安裝完成"
         case .failed:
-            return "Installation encountered an issue"
+            return "安裝過程遇到問題"
         }
     }
     
@@ -140,18 +140,18 @@ struct InstallWizardView: View {
                 Text("OpenClaw CLI")
                     .font(.title3.bold())
                 
-                Text("Your AI-powered command-line assistant")
+                Text("AI 驅動的命令列助手")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             
             // What will be installed
             VStack(alignment: .leading, spacing: 12) {
-                Text("What will be installed:")
+                Text("將會安裝：")
                     .font(.subheadline.bold())
-                
-                installItem(icon: "terminal.fill", color: .purple, title: "openclaw CLI", detail: "Command-line tools")
-                installItem(icon: "server.rack", color: .blue, title: "Gateway Server", detail: "Local AI gateway service")
+
+                installItem(icon: "terminal.fill", color: .purple, title: "openclaw CLI", detail: "命令列工具")
+                installItem(icon: "server.rack", color: .blue, title: "Gateway Server", detail: "本地 AI 閘道服務")
                 installItem(icon: "folder.fill", color: .orange, title: "Config Directory", detail: "~/.openclaw/")
             }
             .padding()
@@ -162,7 +162,7 @@ struct InstallWizardView: View {
             if let pm = installer.selectedPackageManager {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Command:")
+                        Text("安裝指令：")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -223,15 +223,15 @@ struct InstallWizardView: View {
             ProgressView()
                 .scaleEffect(1.5)
             
-            Text("Checking System Requirements")
+            Text("正在檢查系統需求")
                 .font(.headline)
             
             // Check items
             VStack(alignment: .leading, spacing: 12) {
                 checkItem("Node.js", status: installer.checks.nodejs)
-                checkItem("Package Manager", status: installer.checks.packageManager)
-                checkItem("Xcode CLI Tools", status: installer.checks.xcodeTools)
-                checkItem("Network Connection", status: installer.checks.network)
+                checkItem("套件管理器", status: installer.checks.packageManager)
+                checkItem("Xcode 命令列工具", status: installer.checks.xcodeTools)
+                checkItem("網路連線", status: installer.checks.network)
             }
             .padding()
             .background(Color(nsColor: .controlBackgroundColor))
@@ -450,18 +450,18 @@ struct InstallWizardView: View {
             }
             
             VStack(spacing: 8) {
-                Text("Installation Complete! 🎉")
+                Text("安裝完成！")
                     .font(.title3.bold())
-                
+
                 if let version = installer.installedVersion {
-                    Text("OpenClaw \(version) is ready to use")
+                    Text("OpenClaw \(version) 已就緒")
                         .foregroundStyle(.secondary)
                 }
             }
             
             // Quick start command
             VStack(alignment: .leading, spacing: 8) {
-                Text("Quick Start:")
+                Text("快速開始：")
                     .font(.subheadline.bold())
                 
                 HStack {
@@ -493,11 +493,11 @@ struct InstallWizardView: View {
             
             // Quick actions
             HStack(spacing: 12) {
-                quickActionButton(icon: "terminal.fill", title: "Open Terminal") {
+                quickActionButton(icon: "terminal.fill", title: "開啟終端機") {
                     NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
                 }
-                
-                quickActionButton(icon: "book.fill", title: "Documentation") {
+
+                quickActionButton(icon: "book.fill", title: "使用說明") {
                     NSWorkspace.shared.open(URL(string: "https://docs.openclaw.ai")!)
                 }
             }
@@ -557,10 +557,10 @@ struct InstallWizardView: View {
                 if !installer.terminalLines.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Error Log")
+                            Text("錯誤紀錄")
                                 .font(.subheadline.bold())
                             Spacer()
-                            Button("Copy") {
+                            Button("複製") {
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(installer.terminalLines.joined(separator: "\n"), forType: .string)
                             }
@@ -593,57 +593,72 @@ struct InstallWizardView: View {
             HStack(spacing: 8) {
                 Image(systemName: "lightbulb.fill")
                     .foregroundStyle(.yellow)
-                Text("Suggested Fix")
+                Text("建議修復方式")
                     .font(.subheadline.bold())
             }
-            
+
             Text(suggestion.description)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            
-            // Fix command
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Run this command:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
-                HStack {
-                    HStack(spacing: 0) {
-                        Text("$ ")
-                            .foregroundStyle(.green)
-                        Text(suggestion.command)
-                    }
-                    .font(.system(size: 12, design: .monospaced))
-                    
-                    Spacer()
-                    
-                    Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(suggestion.command, forType: .string)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                    }
-                    .buttonStyle(.borderless)
-                }
-                .padding(10)
-                .background(Color(nsColor: .textBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            
-            // Auto-fix button
+
+            // Auto-fix button (primary action for beginners)
             if suggestion.canAutoFix {
                 Button {
                     Task { await installer.applyFix(suggestion) }
                 } label: {
                     HStack {
-                        Image(systemName: "wrench.and.screwdriver.fill")
-                        Text("Apply Fix Automatically")
+                        Image(systemName: "wand.and.stars")
+                        Text("一鍵修復")
                     }
                     .frame(maxWidth: .infinity)
+                    .frame(height: 40)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
             }
+
+            // Fix command (collapsed, for advanced users)
+            DisclosureGroup("進階：手動執行指令") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("在終端機中執行以下指令：")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        HStack(spacing: 0) {
+                            Text("$ ")
+                                .foregroundStyle(.green)
+                            Text(suggestion.command)
+                        }
+                        .font(.system(size: 12, design: .monospaced))
+
+                        Spacer()
+
+                        Button {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(suggestion.command, forType: .string)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "doc.on.doc")
+                                Text("複製")
+                            }
+                            .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    .padding(10)
+                    .background(Color(nsColor: .textBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                    Text("複製後打開「終端機」App 貼上並按 Enter 執行")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary.opacity(0.7))
+                }
+                .padding(.top, 4)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding()
         .background(Color.yellow.opacity(0.05))
@@ -661,7 +676,7 @@ struct InstallWizardView: View {
             switch installer.state {
             case .ready:
                 Spacer()
-                Button("Install") {
+                Button("開始安裝") {
                     appState.trackEvent("install_start", module: "install", meta: [
                         "packageManager": installer.selectedPackageManager ?? "unknown"
                     ])
@@ -677,14 +692,14 @@ struct InstallWizardView: View {
                     .controlSize(.small)
                 
             case .installing:
-                Button("Cancel") {
+                Button("取消") {
                     installer.cancel()
                 }
                 Spacer()
                 
             case .success:
                 Spacer()
-                Button("Continue") {
+                Button("繼續") {
                     onComplete?(installer.installedVersion)
                 }
                 .buttonStyle(.borderedProminent)
@@ -760,13 +775,13 @@ enum InstallStage: Int, CaseIterable {
     
     var label: String {
         switch self {
-        case .checking: return "Check"
-        case .downloading: return "Download"
-        case .installing: return "Install"
-        case .verifying: return "Verify"
+        case .checking: return "檢查"
+        case .downloading: return "下載"
+        case .installing: return "安裝"
+        case .verifying: return "驗證"
         }
     }
-    
+
     var icon: String {
         switch self {
         case .checking: return "magnifyingglass"
@@ -775,13 +790,13 @@ enum InstallStage: Int, CaseIterable {
         case .verifying: return "checkmark.shield"
         }
     }
-    
+
     var description: String {
         switch self {
-        case .checking: return "Checking requirements..."
-        case .downloading: return "Downloading OpenClaw..."
-        case .installing: return "Installing OpenClaw..."
-        case .verifying: return "Verifying installation..."
+        case .checking: return "正在檢查系統需求..."
+        case .downloading: return "正在下載 OpenClaw..."
+        case .installing: return "正在安裝 OpenClaw..."
+        case .verifying: return "正在驗證安裝..."
         }
     }
 }
@@ -894,10 +909,10 @@ class OpenClawInstaller: ObservableObject {
         } else {
             checks.nodejs = .failed
             appendLine("✗ Node.js not found")
-            errorMessage = "Node.js is not installed"
+            errorMessage = "尚未安裝 Node.js"
             fixSuggestion = FixSuggestion(
                 errorType: .nodeNotInstalled,
-                description: "Node.js is required to run OpenClaw. Install it with Homebrew.",
+                description: "OpenClaw 需要 Node.js 才能運行。點擊「一鍵修復」自動安裝。",
                 command: "brew install node",
                 canAutoFix: true
             )
@@ -914,10 +929,10 @@ class OpenClawInstaller: ObservableObject {
             } else {
                 checks.packageManager = .failed
                 appendLine("✗ \(pm) not found")
-                errorMessage = "Package manager not found"
+                errorMessage = "找不到套件管理器"
                 fixSuggestion = FixSuggestion(
                     errorType: .packageManagerMissing,
-                    description: "pnpm is the recommended package manager for OpenClaw.",
+                    description: "建議使用 pnpm 作為套件管理器。點擊「一鍵修復」自動安裝。",
                     command: "npm install -g pnpm",
                     canAutoFix: true
                 )
@@ -926,10 +941,10 @@ class OpenClawInstaller: ObservableObject {
         } else {
             checks.packageManager = .failed
             appendLine("✗ No package manager found")
-            errorMessage = "No package manager found (npm, pnpm, or bun)"
+            errorMessage = "找不到套件管理器（npm、pnpm 或 bun）"
             fixSuggestion = FixSuggestion(
                 errorType: .packageManagerMissing,
-                description: "Install Node.js which includes npm.",
+                description: "安裝 Node.js 即會自帶 npm 套件管理器。",
                 command: "brew install node",
                 canAutoFix: true
             )
@@ -956,10 +971,10 @@ class OpenClawInstaller: ObservableObject {
         } else {
             checks.network = .failed
             appendLine("✗ Cannot reach npm registry")
-            errorMessage = "Network connection failed"
+            errorMessage = "網路連線失敗"
             fixSuggestion = FixSuggestion(
                 errorType: .networkError,
-                description: "Cannot connect to npm registry. Check your internet connection.",
+                description: "無法連線到 npm 套件庫，請確認你的網路連線。",
                 command: "curl -I https://registry.npmjs.org",
                 canAutoFix: false
             )
@@ -975,7 +990,7 @@ class OpenClawInstaller: ObservableObject {
     
     func install() async {
         guard let pm = selectedPackageManager else {
-            errorMessage = "No package manager found"
+            errorMessage = "找不到套件管理器"
             state = .failed
             return
         }
