@@ -694,6 +694,7 @@ struct InstallWizardView: View {
                 Spacer()
                 Button("繼續") {
                     onComplete?(installer.installedVersion)
+                    appState.currentStep = .channels
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
