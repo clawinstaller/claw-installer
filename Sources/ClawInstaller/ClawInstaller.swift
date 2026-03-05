@@ -10,10 +10,18 @@ struct ClawInstallerApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(appState)
-                .frame(minWidth: 800, minHeight: 750)
-                .frame(width: 880, height: 820)
+                .frame(
+                    minWidth: appState.currentStep == .monitor ? 960 : 760,
+                    minHeight: appState.currentStep == .monitor ? 640 : 540
+                )
+                .frame(
+                    width: appState.currentStep == .monitor ? 960 : 760,
+                    height: appState.currentStep == .monitor ? 640 : 540
+                )
+                .preferredColorScheme(.light)
+                .animation(.easeInOut(duration: 0.3), value: appState.currentStep)
         }
-        .windowResizability(.contentMinSize)
+        .windowResizability(.contentSize)
 
         MenuBarExtra("OpenClaw", systemImage: "ant.fill") {
             MenuBarView()
@@ -26,38 +34,60 @@ struct MainView: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        NavigationSplitView {
-            Sidebar()
-        } detail: {
-            switch appState.currentStep {
-            case .welcome:
-                WelcomeView()
-            case .preflight:
-                PreflightView()
-            case .install:
-                InstallWizardView()
-            case .channels:
-                ChannelSetupView()
-            case .monitor:
-                HealthMonitorView()
-            case .support:
-                AISupportView()
+        Group {
+            if appState.currentStep == .monitor {
+                // Post-install: sidebar layout
+                NavigationSplitView(columnVisibility: .constant(.all)) {
+                    HomeSidebar()
+                        .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 220)
+                } detail: {
+                    homeContent
+                }
+                .navigationSplitViewStyle(.balanced)
+            } else {
+                // Wizard flow: single-page, no sidebar
+                wizardContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(nsColor: .windowBackgroundColor))
             }
+        }
+    }
+
+    @ViewBuilder
+    private var wizardContent: some View {
+        switch appState.currentStep {
+        case .welcome:
+            WelcomeView()
+        case .preflight:
+            PreflightView()
+        case .install:
+            InstallWizardView()
+        case .channels:
+            ChannelSetupView()
+        case .support:
+            AISupportView()
+        default:
+            WelcomeView()
+        }
+    }
+
+    @ViewBuilder
+    private var homeContent: some View {
+        switch appState.homeTab {
+        case .status:
+            HealthMonitorView()
+        case .channels:
+            ChannelSetupView()
+        case .ai:
+            AISupportView()
         }
     }
 }
 
-struct Sidebar: View {
-    @EnvironmentObject var appState: AppState
+// MARK: - Home Sidebar (post-install)
 
-    private let steps: [(AppState.Step, String, String)] = [
-        (.welcome, "hand.wave", "Welcome"),
-        (.preflight, "checkmark.shield", "Preflight Check"),
-        (.install, "arrow.down.circle", "Install"),
-        (.channels, "bubble.left.and.bubble.right", "Channels"),
-        (.monitor, "heart.text.square", "Monitor"),
-        (.support, "questionmark.bubble", "AI Support"),
-    ]
+struct HomeSidebar: View {
+    @EnvironmentObject var appState: AppState
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
@@ -65,23 +95,55 @@ struct Sidebar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            List(steps, id: \.0) { step, icon, label in
-                Button {
-                    appState.currentStep = step
-                } label: {
-                    Label(label, systemImage: icon)
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, 4)
-                .foregroundColor(appState.currentStep == step ? .accentColor : .primary)
+            // Logo
+            HStack(spacing: 8) {
+                Image(nsImage: appLogoImage())
+                    .resizable()
+                    .frame(width: 28, height: 28)
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                Text("ClawInstaller")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
             }
-            .listStyle(.sidebar)
+            .padding(.horizontal, 12)
+            .padding(.top, 16)
+            .padding(.bottom, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Nav items
+            VStack(spacing: 2) {
+                sidebarItem(.status, icon: "heart.text.square", label: "系統狀態")
+                sidebarItem(.channels, icon: "bubble.left.and.bubble.right", label: "頻道設定")
+                sidebarItem(.ai, icon: "brain.head.profile", label: "AI 助手")
+            }
+            .padding(.horizontal, 12)
+
+            Spacer()
 
             Text("v\(appVersion)")
                 .font(.caption2)
                 .foregroundStyle(.secondary.opacity(0.6))
                 .padding(.bottom, 8)
         }
-        .navigationTitle("ClawInstaller")
+        .navigationTitle("")
+    }
+
+    private func sidebarItem(_ tab: AppState.HomeTab, icon: String, label: String) -> some View {
+        Button {
+            appState.homeTab = tab
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .frame(width: 16)
+                Text(label)
+                    .font(.subheadline)
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .background(appState.homeTab == tab ? Color.accentColor.opacity(0.12) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(appState.homeTab == tab ? .primary : .secondary)
     }
 }

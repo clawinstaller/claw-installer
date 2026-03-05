@@ -1,55 +1,58 @@
-# ClawInstaller v0.1.3-beta
+# ClawInstaller v0.2.0-beta
 
-> macOS 原生 OpenClaw 安裝精靈 — 內建 AI 助手
+> macOS 原生 OpenClaw 安裝精靈 — V2 全新介面
 
-## v0.1.3 更新內容
+## v0.2.0 更新內容
 
-### 新功能
+### 全新 V2 介面
 
-- **一鍵修復** — 安裝失敗時直接顯示「一鍵修復」按鈕，不需要手動跑指令
-- **AI 助手自動帶入上下文** — 點「問 AI 助手」自動傳送錯誤訊息 + 安裝 Log，不需手動描述問題
-- **Sidebar 版本號** — 左側選單底部顯示目前 App 版本
-- **驗證碼顯示完整信箱** — 不再遮罩 email 地址
+- **全面 UI 重設計** — 所有頁面重新設計，明亮主題、更清爽的視覺體驗
+- **精靈模式 / 控制台模式分離** — 安裝流程為單頁精靈（760x540），完成後控制台自動放大（960x640）
+- **App Logo** — 正確載入 ClawInstaller 品牌 Logo（修復 SPM Bundle.module 資源載入）
+- **Agent 角色卡片** — Welcome 頁面展示三位 AI Agent：阿貓、土豆、小可愛
+- **安裝完成頁面** — 全新慶祝畫面：安裝統計、QR Code 社群分享、快速開始引導
+- **強制亮色模式** — 不再跟隨系統深色模式
 
-### 修復與改善
+### 自有文件站
 
-- **介面全面中文化** — 安裝頁面所有文字改為繁體中文
-- **視窗高度再次調整** — 確保所有內容不被裁切
-- **App Icon 修復** — 去除圓角處白色像素，Dock 上顯示正常
-- **pnpm 錯誤辨識** — 正確辨識 `ERR_PNPM_NO_GLOBAL_BIN_DIR`，一鍵修復
+- **繁體中文文件站上線** — [clawinstaller.github.io/website](https://clawinstaller.github.io/website/)
+- **7 頁內容**：快速開始、安裝流程、Agent 介紹、頻道設定、系統監控、FAQ
+- **App 連結更新** — 「閱讀文件」和「查看新手教學」改指向自家文件站
 
-### 功能模組
+### 控制台優化
+
+- **視窗自動放大** — 進入控制台後視窗從 760x540 → 960x640
+- **Sidebar 不截斷** — 設定最小寬度 180px，文字完整顯示
+
+### CI 修復
+
+- **Resource Bundle 打包** — CI build 現在正確複製 SPM resource bundle 到 .app，Logo 在 DMG 版本也能正常顯示
+
+## 功能模組
 
 | 模組 | 狀態 | 說明 |
 |------|------|------|
-| 環境檢測 | ✅ 完成 | 自動偵測 Node.js、系統架構、套件管理器，一鍵修復常見問題 |
-| 安裝精靈 | ✅ 完成 | 一鍵安裝 OpenClaw，即時進度顯示、錯誤偵測、自動修復 |
-| 頻道設定 | ✅ 完成 | Telegram、Discord、WhatsApp 逐步設定指引 |
-| LLM 設定 | ✅ 完成 | 選擇 AI 供應商（Anthropic、Google、Ollama），自動驗證 API Key |
-| AI 助手 | ✅ 完成 | 內建繁中 AI 助手，自動帶入系統狀態，即問即答 |
-| 健康監控 | 🔜 預覽 | Gateway 狀態顯示，完整控制即將推出 |
-
-### 亮點功能
-
-- **智慧錯誤導引** — 遇到問題時，點「問 AI 助手」自動帶入完整系統資訊
-- **全新 Mac 支援** — 即使是剛開箱的 Mac 也能引導安裝 Node.js
-- **免設定 AI** — 內建 AI 助手開箱即用，不需要 API Key
-- **動態 PATH 偵測** — 支援 nvm、fnm、volta、asdf、Homebrew（Apple Silicon + Intel）
+| 環境檢測 | ✅ 完成 | 自動偵測 Node.js、系統架構、套件管理器，一鍵修復 |
+| 安裝精靈 | ✅ 完成 | 一鍵安裝 OpenClaw，即時終端機輸出、進度條 |
+| 頻道設定 | ✅ 完成 | Telegram、Discord、WhatsApp 設定指引 |
+| LLM 設定 | ✅ 完成 | 選擇 AI 供應商，自動驗證 API Key |
+| AI 助手 | ✅ 完成 | 內建繁中 AI 助手，自動帶入系統狀態 |
+| 健康監控 | ✅ 完成 | Gateway 狀態、控制按鈕、自動刷新 |
+| 文件站 | ✅ 新增 | 繁體中文新手教學 + FAQ |
 
 ## 安裝方式
 
 ### 直接下載
 
-1. 下載下方的 `ClawInstaller-0.1.3-beta-macos.dmg`
+1. 下載下方的 `ClawInstaller-0.2.0-beta-macos.dmg`
 2. 打開 DMG，將 ClawInstaller 拖入「應用程式」資料夾
 3. 首次開啟：右鍵 → 打開（繞過 macOS 安全提示）
 4. 如果看到「ClawInstaller 已損壞」，請在終端機執行：
    ```bash
    xattr -cr /Applications/ClawInstaller.app
    ```
-   然後正常開啟即可。
 
-> 💡 正式版將加入 Apple 公證簽名，屆時雙擊就能直接開啟。
+> 正式版將加入 Apple 公證簽名，屆時雙擊就能直接開啟。
 
 ## 系統需求
 
@@ -57,23 +60,14 @@
 - Apple Silicon 或 Intel Mac
 - 約 100MB 磁碟空間
 
-## 快速開始
-
-1. **環境檢測** — 確認你的系統已就緒
-2. **安裝 OpenClaw** — 一鍵完成安裝
-3. **設定頻道** — 連接 Telegram、Discord 或 WhatsApp
-4. **設定 LLM** — 選擇你的 AI 供應商
-5. **問 AI** — 遇到問題隨時開啟 AI 助手
-
 ## 已知問題
 
-- 目前尚未加入 Apple 公證簽名，首次開啟需手動允許（詳見上方安裝說明）
-- 健康監控為預覽版，完整功能將於下個版本推出
+- 尚未加入 Apple 公證簽名，首次開啟需手動允許
 - WhatsApp QR 掃描需要 Gateway 先啟動
 
 ## 回饋與社群
 
 發現 Bug？[開 Issue 回報](https://github.com/clawinstaller/claw-installer/issues/new)
 
-Telegram 社群：[ClawInstaller Community](https://t.me/clawinstaller)
+文件站：[clawinstaller.github.io/website](https://clawinstaller.github.io/website/)
 Threads：[@0xhoward_peng](https://www.threads.com/@0xhoward_peng)

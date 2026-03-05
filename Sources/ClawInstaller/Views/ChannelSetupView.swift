@@ -1,4 +1,4 @@
-// ChannelSetupView — Channel Selection & Configuration
+// ChannelSetupView — Channel Selection & Configuration (V2 Design)
 
 import SwiftUI
 
@@ -8,107 +8,82 @@ struct ChannelSetupView: View {
     @State private var selectedChannels: Set<ChannelType> = []
     @State private var currentStep: SetupStep = .selection
     @State private var currentChannelIndex: Int = 0
-    
+    @State private var channelToggles: [ChannelType: Bool] = [
+        .telegram: false,
+        .discord: false,
+        .whatsapp: false
+    ]
+
     enum SetupStep {
         case selection
         case configuring
         case complete
     }
-    
+
     var channelsToSetup: [ChannelType] {
         Array(selectedChannels).sorted { $0.rawValue < $1.rawValue }
     }
-    
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            headerView
-            
-            Divider()
-            
-            // Content
-            Group {
-                switch currentStep {
-                case .selection:
-                    channelSelectionView
-                case .configuring:
-                    if currentChannelIndex < channelsToSetup.count {
-                        channelConfigView(for: channelsToSetup[currentChannelIndex])
-                    }
-                case .complete:
-                    setupCompleteView
+        Group {
+            switch currentStep {
+            case .selection:
+                channelSelectionView
+            case .configuring:
+                if currentChannelIndex < channelsToSetup.count {
+                    channelConfigView(for: channelsToSetup[currentChannelIndex])
                 }
+            case .complete:
+                setupCompleteView
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor))
     }
-    
-    // MARK: - Header
-    
-    private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Channel Setup")
-                    .font(.title2.bold())
-                
-                Text(headerSubtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            // Progress indicator
-            if currentStep == .configuring {
-                Text("\(currentChannelIndex + 1) of \(channelsToSetup.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.quaternary)
-                    .clipShape(Capsule())
-            }
-        }
-        .padding()
-    }
-    
-    private var headerSubtitle: String {
-        switch currentStep {
-        case .selection:
-            return "Choose which messaging platforms to connect"
-        case .configuring:
-            return "Follow the steps to configure \(channelsToSetup[currentChannelIndex].displayName)"
-        case .complete:
-            return "All channels configured successfully"
-        }
-    }
-    
-    // MARK: - Channel Selection
-    
+
+    // MARK: - Channel Selection (V2 Design)
+
     private var channelSelectionView: some View {
-        VStack(spacing: 24) {
-            // Channel cards
-            HStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            VStack(alignment: .leading, spacing: 6) {
+                Text("連結你的頻道")
+                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.primary)
+
+                Text("你的 Agent 要在哪些平台上回應？")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+
+            // Channel list
+            VStack(spacing: 8) {
                 ForEach(ChannelType.allCases, id: \.self) { channel in
-                    ChannelCard(
-                        channel: channel,
-                        isSelected: selectedChannels.contains(channel),
-                        isConfigured: isChannelConfigured(channel)
-                    ) {
-                        toggleChannel(channel)
-                    }
+                    channelRow(channel)
                 }
             }
-            .padding(.horizontal)
-            
+
             Spacer()
-            
-            // Continue button
-            HStack {
-                Spacer()
-                
-                Button("Continue") {
+
+            // Button row
+            HStack(spacing: 12) {
+                // Skip button
+                Button {
+                    appState.trackEvent("channel_setup_skip", module: "channels", meta: [:])
+                    appState.currentStep = .monitor
+                } label: {
+                    Text("先略過")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                // Continue button
+                Button {
                     if !selectedChannels.isEmpty {
                         appState.trackEvent("channel_setup_start", module: "channels", meta: [
                             "channels": selectedChannels.map(\.rawValue).sorted().joined(separator: ","),
@@ -117,34 +92,78 @@ struct ChannelSetupView: View {
                         currentStep = .configuring
                         currentChannelIndex = 0
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("繼續")
+                            .font(.system(size: 14, weight: .medium))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(selectedChannels.isEmpty ? Color.orange.opacity(0.4) : Color.orange)
+                    .clipShape(Capsule())
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .disabled(selectedChannels.isEmpty)
             }
-            .padding()
         }
-        .padding(.top)
+        .padding(.top, 32)
+        .padding(.bottom, 28)
+        .padding(.horizontal, 40)
     }
-    
-    private func toggleChannel(_ channel: ChannelType) {
-        if selectedChannels.contains(channel) {
-            selectedChannels.remove(channel)
-        } else {
-            selectedChannels.insert(channel)
+
+    // MARK: - Channel Row
+
+    private func channelRow(_ channel: ChannelType) -> some View {
+        HStack(spacing: 12) {
+            // Icon
+            Image(systemName: channel.iconName)
+                .font(.system(size: 22))
+                .foregroundStyle(channel.color)
+                .frame(width: 28, alignment: .center)
+
+            // Text group
+            VStack(alignment: .leading, spacing: 2) {
+                Text(channel.displayName)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.primary)
+
+                Text(channel.description)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            // Toggle switch
+            Toggle("", isOn: Binding(
+                get: { channelToggles[channel] ?? false },
+                set: { newValue in
+                    channelToggles[channel] = newValue
+                    if newValue {
+                        selectedChannels.insert(channel)
+                    } else {
+                        selectedChannels.remove(channel)
+                    }
+                }
+            ))
+            .toggleStyle(ChannelToggleStyle())
+            .labelsHidden()
         }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
     }
-    
-    private func isChannelConfigured(_ channel: ChannelType) -> Bool {
-        switch channel {
-        case .telegram: return configManager.hasTelegramConfig
-        case .discord: return configManager.hasDiscordConfig
-        case .whatsapp: return configManager.hasWhatsAppConfig
-        }
-    }
-    
+
     // MARK: - Channel Config Views
-    
+
     @ViewBuilder
     private func channelConfigView(for channel: ChannelType) -> some View {
         switch channel {
@@ -156,7 +175,7 @@ struct ChannelSetupView: View {
             WhatsAppSetupView(onComplete: advanceToNextChannel)
         }
     }
-    
+
     private func advanceToNextChannel() {
         if currentChannelIndex + 1 < channelsToSetup.count {
             currentChannelIndex += 1
@@ -168,21 +187,29 @@ struct ChannelSetupView: View {
             currentStep = .complete
         }
     }
-    
+
+    private func isChannelConfigured(_ channel: ChannelType) -> Bool {
+        switch channel {
+        case .telegram: return configManager.hasTelegramConfig
+        case .discord: return configManager.hasDiscordConfig
+        case .whatsapp: return configManager.hasWhatsAppConfig
+        }
+    }
+
     // MARK: - Complete
-    
+
     private var setupCompleteView: some View {
         VStack(spacing: 20) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 60))
                 .foregroundStyle(.green)
-            
-            Text("Channels Configured!")
-                .font(.title2.bold())
-            
-            Text("Your selected channels are ready to use")
+
+            Text("頻道設定完成！")
+                .font(.system(size: 20, weight: .bold, design: .monospaced))
+
+            Text("已選擇的頻道已準備就緒")
                 .foregroundStyle(.secondary)
-            
+
             // Summary
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(channelsToSetup, id: \.self) { channel in
@@ -197,63 +224,53 @@ struct ChannelSetupView: View {
                 }
             }
             .padding()
-            .background(.quaternary)
+            .background(Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .frame(maxWidth: 300)
-            
+
             Spacer()
-            
-            Button("Done") {
-                NSApplication.shared.terminate(nil)
+
+            Button {
+                appState.currentStep = .monitor
+            } label: {
+                Text("完成")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.orange)
+                    .clipShape(Capsule())
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.plain)
+            .frame(maxWidth: 200)
         }
         .padding()
     }
 }
 
-// MARK: - Channel Card
+// MARK: - Channel Toggle Style (44x24 pill)
 
-struct ChannelCard: View {
-    let channel: ChannelType
-    let isSelected: Bool
-    let isConfigured: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: channel.iconName)
-                        .font(.system(size: 40))
-                        .foregroundStyle(channel.color)
-                    
-                    if isConfigured {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(.green)
-                            .offset(x: 8, y: -8)
-                    }
-                }
-                
-                Text(channel.displayName)
-                    .font(.headline)
-                
-                Text(channel.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+struct ChannelToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            configuration.label
+
+            ZStack {
+                Capsule()
+                    .fill(configuration.isOn ? Color.green : Color(nsColor: .systemGray).opacity(0.4))
+                    .frame(width: 44, height: 24)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: 20, height: 20)
+                    .shadow(color: .black.opacity(0.15), radius: 1, y: 1)
+                    .offset(x: configuration.isOn ? 10 : -10)
             }
-            .frame(width: 180, height: 160)
-            .background(isSelected ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .animation(.easeInOut(duration: 0.15), value: configuration.isOn)
+            .onTapGesture {
+                configuration.isOn.toggle()
+            }
         }
-        .buttonStyle(.plain)
     }
 }
 
@@ -263,7 +280,7 @@ enum ChannelType: String, CaseIterable {
     case telegram
     case discord
     case whatsapp
-    
+
     var displayName: String {
         switch self {
         case .telegram: return "Telegram"
@@ -271,7 +288,7 @@ enum ChannelType: String, CaseIterable {
         case .whatsapp: return "WhatsApp"
         }
     }
-    
+
     var iconName: String {
         switch self {
         case .telegram: return "paperplane.fill"
@@ -279,21 +296,20 @@ enum ChannelType: String, CaseIterable {
         case .whatsapp: return "phone.fill"
         }
     }
-    
+
     var color: Color {
         switch self {
-        case .telegram: return .blue
-        case .discord: return .indigo
-        case .whatsapp: return .green
+        case .telegram: return Color(red: 0.0, green: 0.533, blue: 0.8)   // #0088CC
+        case .discord: return Color(red: 0.345, green: 0.396, blue: 0.949) // #5865F2
+        case .whatsapp: return Color(red: 0.145, green: 0.827, blue: 0.4)  // #25D366
         }
     }
-    
+
     var description: String {
         switch self {
-        case .telegram: return "Bot API with rich features"
-        case .discord: return "Server & DM support"
-        case .whatsapp: return "Personal account linking"
+        case .telegram: return "透過 Bot API 連結，功能豐富"
+        case .discord: return "支援伺服器與私訊"
+        case .whatsapp: return "連結個人帳號"
         }
     }
 }
-

@@ -1,6 +1,21 @@
 import Foundation
 import SwiftUI
 
+/// Load the bundled logo image (works with swift run and .app)
+func appLogoImage() -> NSImage {
+    // SPM executables: Bundle.module has processed resources
+    if let url = Bundle.module.url(forResource: "logo", withExtension: "png"),
+       let img = NSImage(contentsOf: url) {
+        return img
+    }
+    // Fallback: Bundle.main (for .app bundles)
+    if let url = Bundle.main.url(forResource: "logo", withExtension: "png"),
+       let img = NSImage(contentsOf: url) {
+        return img
+    }
+    return NSApp.applicationIconImage
+}
+
 /// Shared app state across all views
 @MainActor
 final class AppState: ObservableObject {
@@ -9,11 +24,18 @@ final class AppState: ObservableObject {
         case preflight
         case install
         case channels
-        case monitor
+        case monitor  // Post-install home (sidebar mode)
         case support
     }
 
+    enum HomeTab: String {
+        case status
+        case channels
+        case ai
+    }
+
     @Published var currentStep: Step = .welcome
+    @Published var homeTab: HomeTab = .status
 
     // Auth state
     @AppStorage("userEmail") var userEmail: String = ""

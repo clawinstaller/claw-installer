@@ -36,6 +36,14 @@ jobs:
             cp Sources/ClawInstaller/Resources/AppIcon.icns ClawInstaller.app/Contents/Resources/
           fi
 
+          # Copy SPM resource bundle (Bundle.module uses this)
+          if [ -d .build/release/ClawInstaller_ClawInstaller.bundle ]; then
+            cp -R .build/release/ClawInstaller_ClawInstaller.bundle ClawInstaller.app/Contents/Resources/
+          fi
+
+          # Also copy resources directly for Bundle.main fallback
+          cp Sources/ClawInstaller/Resources/logo.png ClawInstaller.app/Contents/Resources/ 2>/dev/null || true
+
           cat > ClawInstaller.app/Contents/Info.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
