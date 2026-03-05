@@ -70,6 +70,14 @@ jobs:
 
           echo -n "APPL????" > ClawInstaller.app/Contents/PkgInfo
 
+      - name: Code Sign (ad-hoc)
+        run: |
+          # Ad-hoc sign the app bundle
+          codesign --force --deep --sign - ClawInstaller.app
+
+          # Verify the signature
+          codesign --verify --verbose ClawInstaller.app
+
       - name: Create DMG
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}

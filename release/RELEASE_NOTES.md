@@ -31,6 +31,11 @@ First public beta of ClawInstaller. Install OpenClaw, configure channels, and ge
 1. Download `ClawInstaller-0.1.0-beta-macos.dmg` below
 2. Open DMG, drag ClawInstaller to Applications
 3. Right-click > Open (first time only, to bypass Gatekeeper)
+4. If you see "ClawInstaller is damaged", run this in Terminal:
+   ```bash
+   xattr -cr /Applications/ClawInstaller.app
+   ```
+   Then open the app normally.
 
 ### Homebrew
 
@@ -55,7 +60,7 @@ brew install --cask claw-installer
 
 ## Known Issues
 
-- App is unsigned (Gatekeeper will prompt on first launch)
+- App is not notarized — macOS may show "damaged" warning on first launch. See installation steps above for the fix.
 - Health Monitor is preview only (full controls in next release)
 - WhatsApp QR scanning requires Gateway to be running
 
