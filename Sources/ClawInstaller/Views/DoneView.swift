@@ -138,6 +138,27 @@ struct DoneView: View {
                     openTerminal()
                 }
 
+                // Hint: how to verify
+                HStack(spacing: 6) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                    Text("打開 Terminal 輸入")
+                        .font(.custom("Geist", size: 11))
+                        .foregroundStyle(.secondary)
+                    Text("openclaw")
+                        .font(.custom("JetBrains Mono", size: 11).bold())
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                    Text("測試是否安裝成功")
+                        .font(.custom("Geist", size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.leading, 4)
+
                 tryActionCard(
                     icon: "book.fill",
                     iconColor: .blue,
@@ -191,64 +212,65 @@ struct DoneView: View {
     // MARK: - QR Share Card
 
     private var qrShareCard: some View {
-        HStack(spacing: 16) {
-            // QR code
+        VStack(spacing: 12) {
+            Text("📱 掃碼分享到社群")
+                .font(.custom("JetBrains Mono", size: 13).bold())
+
+            // QR code — large enough to scan
             Group {
                 if let image = qrCodeImage {
                     Image(nsImage: image)
                         .interpolation(.none)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 80, height: 80)
+                        .frame(width: 140, height: 140)
+                        .padding(8)
                         .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 } else {
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(Color.secondary.opacity(0.1))
-                        .frame(width: 80, height: 80)
+                        .frame(width: 140, height: 140)
                         .overlay { ProgressView() }
                 }
             }
 
-            // Text group
-            VStack(alignment: .leading, spacing: 8) {
-                Text("分享給朋友")
-                    .font(.custom("Geist", size: 13).bold())
+            Text("掃描 QR Code 一鍵分享你的安裝體驗")
+                .font(.custom("Geist", size: 11))
+                .foregroundStyle(.secondary)
 
-                Text("掃描 QR Code 在社群分享你的安裝成就")
-                    .font(.custom("Geist", size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                // Platform selector
-                HStack(spacing: 8) {
-                    ForEach(SharePlatform.allCases, id: \.rawValue) { platform in
-                        Button {
-                            selectedPlatform = platform
-                            generateQRCode()
-                        } label: {
-                            Text(platform.rawValue)
-                                .font(.custom("Geist", size: 10).bold())
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    selectedPlatform == platform
-                                        ? Color.accentColor
-                                        : Color.secondary.opacity(0.12)
-                                )
-                                .foregroundStyle(
-                                    selectedPlatform == platform ? .white : .primary
-                                )
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
+            // Platform selector
+            HStack(spacing: 8) {
+                ForEach(SharePlatform.allCases, id: \.rawValue) { platform in
+                    Button {
+                        selectedPlatform = platform
+                        generateQRCode()
+                    } label: {
+                        Text(platform.rawValue)
+                            .font(.custom("Geist", size: 11).bold())
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(
+                                selectedPlatform == platform
+                                    ? Color.accentColor
+                                    : Color.secondary.opacity(0.12)
+                            )
+                            .foregroundStyle(
+                                selectedPlatform == platform ? .white : .primary
+                            )
+                            .clipShape(Capsule())
                     }
+                    .buttonStyle(.plain)
                 }
             }
+
+            Text("#ClawInstaller #OpenClaw")
+                .font(.custom("JetBrains Mono", size: 11))
+                .foregroundStyle(.orange)
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }

@@ -131,15 +131,18 @@ struct HomeSidebar: View {
         Button {
             appState.homeTab = tab
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .frame(width: 16)
+                    .font(.system(size: 14))
+                    .frame(width: 20)
                 Text(label)
-                    .font(.subheadline)
+                    .font(.system(size: 13, weight: .medium))
                 Spacer()
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .background(appState.homeTab == tab ? Color.accentColor.opacity(0.12) : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }

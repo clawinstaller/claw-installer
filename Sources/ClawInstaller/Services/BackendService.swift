@@ -3,6 +3,7 @@
 
 import Foundation
 import CryptoKit
+import AppKit
 
 actor BackendService {
     static let shared = BackendService()
@@ -178,10 +179,18 @@ actor BackendService {
         let module: String
         let meta: [String: String]?
         let durationMs: Int?
+        // System info
         let arch: String?
         let macosVersion: String?
         let nodeVersion: String?
         let packageManager: String?
+        let appVersion: String?
+        // Device info
+        let macModel: String?
+        let memoryGB: Int?
+        let locale: String?
+        let timezone: String?
+        let screenResolution: String?
     }
 
     func sendTelemetryEvent(
@@ -199,7 +208,7 @@ actor BackendService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 5
 
-        let macosVersion = ProcessInfo.processInfo.operatingSystemVersionString
+        let deviceInfo = DeviceInfo.collect()
 
         let body = TelemetryEvent(
             deviceId: deviceId,
@@ -207,10 +216,16 @@ actor BackendService {
             module: module,
             meta: meta,
             durationMs: durationMs,
-            arch: arch,
-            macosVersion: macosVersion,
+            arch: arch ?? deviceInfo.arch,
+            macosVersion: deviceInfo.macosVersion,
             nodeVersion: nodeVersion,
-            packageManager: packageManager
+            packageManager: packageManager,
+            appVersion: deviceInfo.appVersion,
+            macModel: deviceInfo.macModel,
+            memoryGB: deviceInfo.memoryGB,
+            locale: deviceInfo.locale,
+            timezone: deviceInfo.timezone,
+            screenResolution: deviceInfo.screenResolution
         )
 
         do {
@@ -248,6 +263,75 @@ actor BackendService {
         let raw = "\(host)-\(platform)-clawinstaller"
         let hash = SHA256.hash(data: Data(raw.utf8))
         return hash.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// MARK: - Device Info
+
+struct DeviceInfo {
+    let arch: String
+    let macosVersion: String
+    let appVersion: String
+    let macModel: String?
+    let memoryGB: Int
+    let locale: String
+    let timezone: String
+    let screenResolution: String?
+
+    static func collect() -> DeviceInfo {
+        let processInfo = ProcessInfo.processInfo
+
+        // Architecture
+        #if arch(arm64)
+        let arch = "arm64"
+        #else
+        let arch = "x86_64"
+        #endif
+
+        // macOS version
+        let osVersion = processInfo.operatingSystemVersion
+        let macosVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
+
+        // App version
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+
+        // Mac model (e.g., "MacBookPro18,1")
+        let macModel = sysctl("hw.model")
+
+        // Memory in GB
+        let memoryGB = Int(processInfo.physicalMemory / (1024 * 1024 * 1024))
+
+        // Locale & timezone
+        let locale = Locale.current.identifier // e.g., "zh_TW"
+        let timezone = TimeZone.current.identifier // e.g., "Asia/Taipei"
+
+        // Screen resolution (MainActor-safe)
+        var screenResolution: String? = nil
+        if Thread.isMainThread, let screen = NSScreen.main {
+            let size = screen.frame.size
+            let scale = screen.backingScaleFactor
+            screenResolution = "\(Int(size.width * scale))x\(Int(size.height * scale))"
+        }
+
+        return DeviceInfo(
+            arch: arch,
+            macosVersion: macosVersion,
+            appVersion: appVersion,
+            macModel: macModel,
+            memoryGB: memoryGB,
+            locale: locale,
+            timezone: timezone,
+            screenResolution: screenResolution
+        )
+    }
+
+    private static func sysctl(_ name: String) -> String? {
+        var size = 0
+        sysctlbyname(name, nil, &size, nil, 0)
+        guard size > 0 else { return nil }
+        var value = [CChar](repeating: 0, count: size)
+        sysctlbyname(name, &value, &size, nil, 0)
+        return String(cString: value)
     }
 }
 

@@ -179,7 +179,7 @@ struct HealthMonitorView: View {
                     .fill(monitor.statusColor.opacity(0.1))
                     .frame(width: 80, height: 80)
                 
-                if monitor.isChecking {
+                if monitor.showCheckingIndicator {
                     ProgressView()
                         .scaleEffect(1.5)
                 } else {
@@ -643,8 +643,11 @@ class GatewayMonitor: ObservableObject {
         isConnected ? .green : .red
     }
     
+    /// Only show "Checking..." on manual checks, not auto-refresh
+    @Published var showCheckingIndicator: Bool = false
+
     var statusText: String {
-        if isChecking { return "Checking..." }
+        if showCheckingIndicator { return "Checking..." }
         return isConnected ? "Connected" : "Disconnected"
     }
     
@@ -671,11 +674,11 @@ class GatewayMonitor: ObservableObject {
         Task { await checkStatus() }
         Task { await refreshLogs() }
         
-        // Auto-refresh timer
+        // Auto-refresh timer (silent — no "Checking..." badge flicker)
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             guard let self = self, self.autoRefresh else { return }
             Task { @MainActor in
-                await self.checkStatus()
+                await self.checkStatus(silent: true)
             }
         }
         
@@ -696,20 +699,29 @@ class GatewayMonitor: ObservableObject {
         uptimeTimer = nil
     }
     
-    func checkStatus() async {
+    func checkStatus(silent: Bool = false) async {
+        // Avoid overlapping checks
+        guard !isChecking else { return }
         isChecking = true
-        defer { isChecking = false }
-        
+        if !silent { showCheckingIndicator = true }
+        defer {
+            isChecking = false
+            showCheckingIndicator = false
+        }
+
         // Check WebSocket endpoint
-        let result = await ShellRunner.run("curl -s -o /dev/null -w '%{http_code}' http://localhost:18789/health 2>/dev/null || echo '000'")
+        let result = await ShellRunner.run("curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 http://localhost:18789/health 2>/dev/null || echo '000'")
         let statusCode = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
+        let wasConnected = isConnected
         isConnected = statusCode == "200"
         lastCheckTime = Date()
-        
+
         if isConnected {
-            // Get additional info
-            await fetchGatewayInfo()
+            // Only fetch full info on first connect or manual check
+            if !wasConnected || !silent {
+                await fetchGatewayInfo()
+            }
         } else {
             uptimeSeconds = 0
             messagesToday = 0
