@@ -15,8 +15,9 @@ enum ShellRunner {
         let home = env["HOME"] ?? NSHomeDirectory()
 
         var extraPaths: [String] = [
-            "/opt/homebrew/bin",       // Homebrew (Apple Silicon)
-            "/usr/local/bin",          // Homebrew (Intel) / manual installs
+            "\(home)/.local/share/pnpm", // pnpm global bin (PNPM_HOME)
+            "/opt/homebrew/bin",          // Homebrew (Apple Silicon)
+            "/usr/local/bin",             // Homebrew (Intel) / manual installs
         ]
 
         // nvm: find latest installed version dynamically
@@ -70,6 +71,12 @@ enum ShellRunner {
         extraPaths.append(env["PATH"] ?? "")
 
         env["PATH"] = extraPaths.joined(separator: ":")
+
+        // Ensure PNPM_HOME is set so pnpm knows where to install global packages
+        if env["PNPM_HOME"] == nil {
+            env["PNPM_HOME"] = "\(home)/.local/share/pnpm"
+        }
+
         return (env, extraPaths)
     }
 

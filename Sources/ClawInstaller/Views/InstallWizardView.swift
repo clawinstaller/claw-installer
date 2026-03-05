@@ -747,23 +747,24 @@ struct InstallWizardView: View {
     @State private var reportSent = false
 
     private func reportIssue() {
-        let logText = installer.terminalLines.suffix(50).joined(separator: "\n")
-        let errorMsg = installer.errorMessage ?? "unknown"
+        let logText = installer.terminalLines.suffix(30).joined(separator: "\n")
+        let errorMsg = installer.errorMessage ?? "未知錯誤"
+        let pm = installer.selectedPackageManager ?? "unknown"
 
         appState.trackEvent("install_failed", module: "install", meta: [
             "error": errorMsg,
-            "packageManager": installer.selectedPackageManager ?? "unknown",
+            "packageManager": pm,
             "log": String(logText.prefix(2000)),
         ])
 
-        // Also create GitHub issue URL with pre-filled body
+        let title = "安裝失敗：\(errorMsg)"
         let body = """
-        **錯誤訊息**: \(errorMsg)
-        **Package Manager**: \(installer.selectedPackageManager)
-        **macOS**: \(ProcessInfo.processInfo.operatingSystemVersionString)
+        **錯誤訊息**：\(errorMsg)
+        **套件管理器**：\(pm)
+        **macOS**：\(ProcessInfo.processInfo.operatingSystemVersionString)
 
         <details>
-        <summary>安裝 Log</summary>
+        <summary>安裝 Log（最後 30 行）</summary>
 
         ```
         \(logText)
@@ -771,8 +772,13 @@ struct InstallWizardView: View {
         </details>
         """
 
-        if let encoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-           let url = URL(string: "https://github.com/clawinstaller/claw-installer/issues/new?title=安裝失敗：\(errorMsg.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "error")&body=\(encoded)") {
+        // Use URLComponents to properly encode Chinese characters
+        var components = URLComponents(string: "https://github.com/clawinstaller/claw-installer/issues/new")!
+        components.queryItems = [
+            URLQueryItem(name: "title", value: title),
+            URLQueryItem(name: "body", value: body),
+        ]
+        if let url = components.url {
             NSWorkspace.shared.open(url)
         }
 
@@ -873,7 +879,10 @@ class OpenClawInstaller: ObservableObject {
     @Published var selectedPackageManager: String?
     @Published var checks = SystemChecks()
     @Published var fixSuggestion: FixSuggestion?
-    
+
+    /// Set after pnpm fix to inject PNPM_HOME into install command
+    var pnpmHomePath: String?
+
     private var installTask: Task<Void, Never>?
     
     init() {
@@ -1020,7 +1029,14 @@ class OpenClawInstaller: ObservableObject {
                 appendLine("")
                 
                 // Run install command with streaming
-                let installCmd = "\(pm) install -g openclaw@latest 2>&1"
+                // If pnpm was just fixed, inject PNPM_HOME so the new env takes effect
+                let envPrefix: String
+                if let pnpmHome = pnpmHomePath, pm == "pnpm" {
+                    envPrefix = "export PNPM_HOME=\"\(pnpmHome)\" && export PATH=\"$PNPM_HOME:$PATH\" && "
+                } else {
+                    envPrefix = ""
+                }
+                let installCmd = "\(envPrefix)\(pm) install -g openclaw@latest 2>&1"
                 var hasError = false
                 var errorOutput = ""
                 
@@ -1100,8 +1116,8 @@ class OpenClawInstaller: ObservableObject {
             errorMessage = "pnpm 全域目錄未設定"
             fixSuggestion = FixSuggestion(
                 errorType: .packageManagerMissing,
-                description: "pnpm 需要先初始化全域目錄。點擊「自動修復」即可解決。",
-                command: "pnpm setup && source ~/.zshrc",
+                description: "pnpm 需要先初始化全域目錄。點擊「一鍵修復」即可解決。",
+                command: "pnpm setup",
                 canAutoFix: true
             )
         } else if errorText.contains("eacces") || errorText.contains("permission denied") {
@@ -1138,8 +1154,8 @@ class OpenClawInstaller: ObservableObject {
     func applyFix(_ suggestion: FixSuggestion) async {
         state = .installing
         appendLine("")
-        appendLine("$ Applying fix: \(suggestion.command)")
-        
+        appendLine("$ 正在修復：\(suggestion.command)")
+
         let result = await ShellRunner.runWithStreaming(
             suggestion.command,
             onOutput: { [weak self] output in
@@ -1149,21 +1165,38 @@ class OpenClawInstaller: ObservableObject {
                 self?.appendLine(error)
             }
         )
-        
-        if result.success {
-            appendLine("✓ Fix applied successfully")
+
+        // For pnpm setup: even if exit code is 0, we need to ensure PNPM_HOME is set
+        // because the new shell env won't be available in subprocess
+        if suggestion.errorType == .packageManagerMissing && selectedPackageManager == "pnpm" {
+            let home = FileManager.default.homeDirectoryForCurrentUser.path
+            let pnpmHome = "\(home)/.local/share/pnpm"
+
+            // Ensure pnpm home directory exists
+            try? FileManager.default.createDirectory(
+                atPath: pnpmHome,
+                withIntermediateDirectories: true
+            )
+
+            // Store for use in install command
+            pnpmHomePath = pnpmHome
+
+            appendLine("✓ 已設定 PNPM_HOME: \(pnpmHome)")
             appendLine("")
-            
-            // Re-detect package manager after fix
-            await MainActor.run {
-                detectPackageManager()
-            }
-            
-            // Retry installation
+
+            // Re-detect and retry
+            detectPackageManager()
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await startInstall()
+        } else if result.success {
+            appendLine("✓ 修復完成")
+            appendLine("")
+
+            detectPackageManager()
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await startInstall()
         } else {
-            appendLine("✗ Fix failed: \(result.stderr)")
+            appendLine("✗ 修復失敗：\(result.stderr)")
             state = .failed
         }
     }
