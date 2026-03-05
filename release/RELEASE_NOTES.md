@@ -28,8 +28,8 @@ First public beta of ClawInstaller. Install OpenClaw, configure channels, and ge
 
 ### Direct Download
 
-1. Download `ClawInstaller-0.1.0-beta-macos.zip` below
-2. Unzip and drag to Applications
+1. Download `ClawInstaller-0.1.0-beta-macos.dmg` below
+2. Open DMG, drag ClawInstaller to Applications
 3. Right-click > Open (first time only, to bypass Gatekeeper)
 
 ### Homebrew
@@ -63,5 +63,5 @@ brew install --cask claw-installer
 
 Found a bug? [Open an issue](https://github.com/clawinstaller/claw-installer/issues/new)
 
-Telegram: [@clawinstaller](https://t.me/clawinstaller)
+Telegram Group: [ClawInstaller Community](https://t.me/clawinstaller)
 Threads: [@0xhoward_peng](https://www.threads.com/@0xhoward_peng)
