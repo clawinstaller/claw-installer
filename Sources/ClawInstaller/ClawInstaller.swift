@@ -10,9 +10,10 @@ struct ClawInstallerApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(appState)
-                .frame(width: 800, height: 600)
+                .frame(minWidth: 800, minHeight: 700)
+                .frame(width: 860, height: 720)
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
 
         MenuBarExtra("OpenClaw", systemImage: "ant.fill") {
             MenuBarView()

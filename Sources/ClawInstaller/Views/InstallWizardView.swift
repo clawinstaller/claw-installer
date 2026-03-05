@@ -537,7 +537,7 @@ struct InstallWizardView: View {
                 }
                 
                 VStack(spacing: 8) {
-                    Text("Installation Failed")
+                    Text("安裝失敗")
                         .font(.title3.bold())
                     
                     if let error = installer.errorMessage {
@@ -691,8 +691,10 @@ struct InstallWizardView: View {
                 .controlSize(.large)
                 
             case .failed:
-                Button("View Full Log") {
-                    openLogFile()
+                Button {
+                    reportIssue()
+                } label: {
+                    Label("回報問題", systemImage: "envelope.fill")
                 }
 
                 Button {
@@ -703,7 +705,7 @@ struct InstallWizardView: View {
                 .buttonStyle(.bordered)
 
                 Spacer()
-                Button("Retry") {
+                Button("重試") {
                     Task { await installer.startInstall() }
                 }
                 .buttonStyle(.borderedProminent)
@@ -712,17 +714,39 @@ struct InstallWizardView: View {
         .padding()
     }
     
-    private func openLogFile() {
-        // Open log file in Console or TextEdit
-        let logPath = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".openclaw")
-            .appendingPathComponent("install.log")
-        
-        // Write log
-        try? installer.terminalLines.joined(separator: "\n")
-            .write(to: logPath, atomically: true, encoding: .utf8)
-        
-        NSWorkspace.shared.open(logPath)
+    @State private var reportSent = false
+
+    private func reportIssue() {
+        let logText = installer.terminalLines.suffix(50).joined(separator: "\n")
+        let errorMsg = installer.errorMessage ?? "unknown"
+
+        appState.trackEvent("install_failed", module: "install", meta: [
+            "error": errorMsg,
+            "packageManager": installer.selectedPackageManager ?? "unknown",
+            "log": String(logText.prefix(2000)),
+        ])
+
+        // Also create GitHub issue URL with pre-filled body
+        let body = """
+        **錯誤訊息**: \(errorMsg)
+        **Package Manager**: \(installer.selectedPackageManager)
+        **macOS**: \(ProcessInfo.processInfo.operatingSystemVersionString)
+
+        <details>
+        <summary>安裝 Log</summary>
+
+        ```
+        \(logText)
+        ```
+        </details>
+        """
+
+        if let encoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+           let url = URL(string: "https://github.com/clawinstaller/claw-installer/issues/new?title=安裝失敗：\(errorMsg.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "error")&body=\(encoded)") {
+            NSWorkspace.shared.open(url)
+        }
+
+        reportSent = true
     }
 }
 
@@ -1042,27 +1066,35 @@ class OpenClawInstaller: ObservableObject {
         // Detect specific errors and provide fix suggestions
         let errorText = terminalLines.joined(separator: "\n").lowercased()
         
-        if errorText.contains("eacces") || errorText.contains("permission denied") {
-            errorMessage = "Permission denied during installation"
+        if errorText.contains("err_pnpm_no_global_bin_dir") || errorText.contains("pnpm setup") {
+            errorMessage = "pnpm 全域目錄未設定"
+            fixSuggestion = FixSuggestion(
+                errorType: .packageManagerMissing,
+                description: "pnpm 需要先初始化全域目錄。點擊「自動修復」即可解決。",
+                command: "pnpm setup && source ~/.zshrc",
+                canAutoFix: true
+            )
+        } else if errorText.contains("eacces") || errorText.contains("permission denied") {
+            errorMessage = "安裝權限不足"
             fixSuggestion = FixSuggestion(
                 errorType: .permissionDenied,
-                description: "npm global packages require proper permissions. Fix npm prefix.",
+                description: "npm 全域套件需要正確的權限設定。點擊「自動修復」即可解決。",
                 command: "mkdir -p ~/.npm-global && npm config set prefix ~/.npm-global",
                 canAutoFix: true
             )
-        } else if errorText.contains("enotfound") || errorText.contains("network") {
-            errorMessage = "Network error during download"
+        } else if errorText.contains("enotfound") || (errorText.contains("network") && !errorText.contains("pnpm")) {
+            errorMessage = "網路連線失敗"
             fixSuggestion = FixSuggestion(
                 errorType: .networkError,
-                description: "Failed to download packages. Check your internet connection and retry.",
+                description: "無法下載套件，請檢查你的網路連線後重試。",
                 command: "ping -c 3 registry.npmjs.org",
                 canAutoFix: false
             )
         } else if errorText.contains("gyp") || errorText.contains("node-pre-gyp") {
-            errorMessage = "Native module compilation failed"
+            errorMessage = "原生模組編譯失敗"
             fixSuggestion = FixSuggestion(
                 errorType: .xcodeToolsMissing,
-                description: "Some packages require Xcode Command Line Tools for compilation.",
+                description: "部分套件需要 Xcode Command Line Tools 才能編譯。",
                 command: "xcode-select --install",
                 canAutoFix: true
             )
