@@ -1,0 +1,49 @@
+language: zh-TW
+model: kimi-k2.5
+
+review:
+  auto:
+    enabled: true
+    onOpen: true
+    onPush: true
+    drafts: false
+
+  aspects:
+    bugs: true
+    security: true
+    performance: true
+    style: true
+    bestPractices: true
+    documentation: false
+    testing: false
+
+  minSeverity: suggestion
+  maxAnnotations: 30
+  failOn: critical
+
+files:
+  include:
+    - "**/*"
+  exclude:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/*.lock"
+    - "**/*.min.*"
+    - ".build/**"
+    - "mcp/node_modules/**"
+
+rules:
+  - name: no-force-unwrap
+    description: "Avoid force unwrapping optionals in Swift"
+    severity: warning
+    filePattern: "Sources/**/*.swift"
+
+  - name: no-hardcoded-urls
+    description: "API URLs should use environment variables or constants"
+    severity: warning
+    filePattern: "Sources/**/*.swift"
+
+  - name: input-validation
+    description: "MCP tool handlers must validate input parameters"
+    severity: critical
+    filePattern: "mcp/src/**/*.ts"
