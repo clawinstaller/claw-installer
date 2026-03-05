@@ -276,58 +276,51 @@ struct InstallWizardView: View {
     // MARK: - Installing View
     
     private var installingView: some View {
-        VStack(spacing: 20) {
-            // Progress stages
+        VStack(spacing: 16) {
+            // Progress stages (compact)
             stageProgressBar
-            
-            // Progress percentage
-            HStack {
-                Text("\(Int(installer.progress * 100))%")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.blue)
-                
-                Spacer()
-                
-                Text(installer.currentStage.description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal)
-            
-            // Linear progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.secondary.opacity(0.2))
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .leading,
-                                endPoint: .trailing
+
+            // Progress bar + percentage
+            HStack(spacing: 12) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.secondary.opacity(0.2))
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(width: geo.size.width * installer.progress)
-                        .animation(.easeInOut(duration: 0.3), value: installer.progress)
+                            .frame(width: geo.size.width * installer.progress)
+                            .animation(.easeInOut(duration: 0.3), value: installer.progress)
+                    }
                 }
+                .frame(height: 6)
+
+                Text("\(Int(installer.progress * 100))%")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(.blue)
+                    .frame(width: 40, alignment: .trailing)
             }
-            .frame(height: 8)
             .padding(.horizontal)
-            
-            // Terminal output
-            terminalView
-            
-            // Current action
+
+            // Status message
             if !installer.statusMessage.isEmpty {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
                     Text(installer.statusMessage)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
+
+            // Terminal output — larger and prominent
+            terminalView
         }
         .padding()
     }
@@ -403,7 +396,7 @@ struct InstallWizardView: View {
             }
             .background(Color(red: 0.1, green: 0.1, blue: 0.12))
             .clipShape(RoundedRectangle(cornerRadius: 8))
-            .frame(height: 180)
+            .frame(maxHeight: .infinity)
             .onChange(of: installer.terminalLines.count) { _, _ in
                 if let lastIndex = installer.terminalLines.indices.last {
                     withAnimation(.easeOut(duration: 0.1)) {
@@ -417,7 +410,7 @@ struct InstallWizardView: View {
     private func terminalLine(_ line: String) -> some View {
         let (text, color) = parseTerminalLine(line)
         return Text(text)
-            .font(.system(size: 11, design: .monospaced))
+            .font(.system(size: 13, design: .monospaced))
             .foregroundStyle(color)
     }
     
@@ -1045,14 +1038,28 @@ class OpenClawInstaller: ObservableObject {
                     onOutput: { [weak self] output in
                         guard let self = self else { return }
                         self.appendLine(output)
-                        
-                        // Update progress based on output
-                        if output.contains("Resolving") || output.contains("Downloading") {
-                            self.progress = min(self.progress + 0.1, 0.5)
-                            self.statusMessage = "Downloading packages..."
-                        } else if output.contains("Building") || output.contains("Installing") {
-                            self.setStage(.installing, progress: min(self.progress + 0.1, 0.8))
-                            self.statusMessage = "Installing packages..."
+
+                        // Update progress + status based on output
+                        let lower = output.lowercased()
+                        if lower.contains("resolving") || lower.contains("resolved") {
+                            self.progress = min(self.progress + 0.05, 0.35)
+                            self.statusMessage = "正在解析套件依賴..."
+                        } else if lower.contains("downloading") || lower.contains("downloaded") {
+                            self.progress = min(self.progress + 0.05, 0.5)
+                            self.statusMessage = "正在下載套件..."
+                        } else if lower.contains("progress:") {
+                            self.progress = min(self.progress + 0.02, 0.6)
+                            // Parse pnpm progress line for friendly message
+                            if let match = output.range(of: "downloaded (\\d+)", options: .regularExpression) {
+                                let num = output[match].filter(\.isNumber)
+                                self.statusMessage = "已下載 \(num) 個套件..."
+                            }
+                        } else if lower.contains("building") || lower.contains("linking") {
+                            self.setStage(.installing, progress: min(self.progress + 0.05, 0.75))
+                            self.statusMessage = "正在安裝套件..."
+                        } else if lower.contains("added") || lower.contains("packages") {
+                            self.progress = min(self.progress + 0.1, 0.85)
+                            self.statusMessage = "套件安裝中，即將完成..."
                         }
                     },
                     onError: { [weak self] error in
