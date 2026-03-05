@@ -1,14 +1,36 @@
 import Foundation
 import SwiftUI
 
+/// Safe resource bundle lookup (Bundle.module fatalErrors if not found)
+private let resourceBundle: Bundle = {
+    // 1. SPM resource bundle next to executable
+    let bundleName = "ClawInstaller_ClawInstaller"
+    let candidates = [
+        Bundle.main.resourceURL,
+        Bundle.main.bundleURL,
+        Bundle.main.executableURL?.deletingLastPathComponent(),
+    ]
+    for candidate in candidates {
+        guard let dir = candidate else { continue }
+        if let bundle = Bundle(url: dir.appendingPathComponent(bundleName + ".bundle")) {
+            return bundle
+        }
+        // Also check Resources/ subdirectory
+        if let bundle = Bundle(url: dir.appendingPathComponent("Resources/" + bundleName + ".bundle")) {
+            return bundle
+        }
+    }
+    return Bundle.main
+}()
+
 /// Load the bundled logo image (works with swift run and .app)
 func appLogoImage() -> NSImage {
-    // SPM executables: Bundle.module has processed resources
-    if let url = Bundle.module.url(forResource: "logo", withExtension: "png"),
+    // Try SPM resource bundle first
+    if let url = resourceBundle.url(forResource: "logo", withExtension: "png"),
        let img = NSImage(contentsOf: url) {
         return img
     }
-    // Fallback: Bundle.main (for .app bundles)
+    // Fallback: Bundle.main (for .app with resources copied directly)
     if let url = Bundle.main.url(forResource: "logo", withExtension: "png"),
        let img = NSImage(contentsOf: url) {
         return img
