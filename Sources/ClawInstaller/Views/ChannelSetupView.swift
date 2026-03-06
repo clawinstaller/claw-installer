@@ -121,13 +121,11 @@ enum ChannelType: String, CaseIterable, Identifiable {
 enum DMPolicy: String, CaseIterable {
     case pairing    // Pairing code verification (recommended)
     case allowlist  // Allowlist
-    case open       // Open
 
     var displayName: String {
         switch self {
         case .pairing: return "配對碼驗證"
         case .allowlist: return "白名單"
-        case .open: return "開放"
         }
     }
 
@@ -135,7 +133,6 @@ enum DMPolicy: String, CaseIterable {
         switch self {
         case .pairing: return "使用者必須先輸入配對碼才能與 Agent 對話。安全且簡單，推薦使用。"
         case .allowlist: return "只有白名單上的使用者 ID 才能傳訊給 Agent。需手動管理名單。"
-        case .open: return "任何人都可以直接傳訊給 Agent。存在嚴重安全風險，強烈不建議使用。"
         }
     }
 }
@@ -544,15 +541,6 @@ struct ChannelSetupView: View {
                 .foregroundStyle(.orange)
             }
 
-            if selectedDMPolicy == .open {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
-                    Text("危險 — 此選項永不建議開放")
-                        .font(.system(size: 10, weight: .semibold))
-                }
-                .foregroundStyle(.red)
-            }
         }
         .padding(16)
         .background(Color(nsColor: .controlBackgroundColor))
