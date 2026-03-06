@@ -24,6 +24,11 @@ struct DoneView: View {
                 // --- Action buttons row ---
                 actionButtonsRow
 
+                // --- GWS Skills nudge (post-install, non-blocking) ---
+                if !appState.hasInstalledGWSSkills && !appState.gwsSkillsDismissed {
+                    gwsSkillsNudge
+                }
+
                 // --- Tip card ---
                 tipCard
 
@@ -215,6 +220,57 @@ struct DoneView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - GWS Skills Nudge
+
+    private var gwsSkillsNudge: some View {
+        HStack(spacing: 12) {
+            // Google "G" icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(red: 0.259, green: 0.522, blue: 0.957)) // #4285F4
+                    .frame(width: 32, height: 32)
+
+                Text("G")
+                    .font(.custom("Geist", size: 18).bold())
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("擴充：Google Workspace Skills")
+                    .font(.custom("Geist", size: 12).weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text("讓 Agent 幫你管理 Gmail、Drive、Calendar")
+                    .font(.custom("Geist", size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                appState.currentStep = .monitor
+                // TODO: navigate to Skills management tab when implemented
+            } label: {
+                Text("設定 \u{2192}")
+                    .font(.custom("Geist", size: 11).weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
     }
 
     // MARK: - Tip Card

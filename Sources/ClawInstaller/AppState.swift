@@ -82,6 +82,13 @@ final class AppState: ObservableObject {
     // AI Support — auto-send context when navigating from error pages
     @Published var pendingAIQuestion: String?
 
+    // GWS Skills state
+    @AppStorage("gwsSkillsDismissed") var gwsSkillsDismissed: Bool = false
+
+    var hasInstalledGWSSkills: Bool {
+        selectedSkills.contains(where: { $0.hasPrefix("gws-") })
+    }
+
     // Telemetry opt-out
     @AppStorage("telemetryEnabled") var telemetryEnabled: Bool = true
 
