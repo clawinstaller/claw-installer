@@ -15,7 +15,7 @@
   <a href="README.en.md">English</a> · <a href="https://t.me/clawinstaller">Telegram 群組</a> · <a href="https://www.threads.net/@0xhoward_peng">Threads</a>
 </p>
 
-> **非官方社群專案**，與 OpenClaw 團隊無關。
+> **獨立社群專案，為 OpenClaw 生態而生。**
 
 ---
 

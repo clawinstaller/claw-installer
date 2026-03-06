@@ -6,7 +6,7 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue.svg)](https://www.apple.com/macos)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Unofficial, not affiliated with the OpenClaw team.**
+**Independent community project, built for the OpenClaw ecosystem.**
 
 [繁體中文](README.zh-TW.md)
 
